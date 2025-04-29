@@ -27,7 +27,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       await _auth.sendPasswordResetEmail(email: _emailController.text.trim());
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('OTP sent to email')));
+      ).showSnackBar(SnackBar(content: Text('reset link send to email')));
       setState(() {
         _isOtpSent = true;
       });
@@ -79,7 +79,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             children: [
               Center(
                 child: Image.asset(
-                  'assets/images/taxilogo.png',
+                  'assets/images/driver_logo.png',
                   height: height * 0.3,
                   width: width * 0.7,
                 ),

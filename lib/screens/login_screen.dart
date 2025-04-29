@@ -1,5 +1,7 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:garifordriver/global/global.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -11,68 +13,59 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  bool _obscurePassword = true;
-  bool _isLoading = false; // Add a variable to track loading state
-
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _isLoading = false;
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  void _login() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
 
-  void clearcontroller() {
-    _emailController.clear();
-    _passwordController.clear();
-  }
+      try {
+        final authResult = await firebaseauth.signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
 
-  Future<void> _loginUser() async {
-    setState(() {
-      _isLoading = true; // Show the loader when the login starts
-    });
+        currentuser = authResult.user;
 
-    try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+        if (currentuser != null) {
+          final userRef = FirebaseDatabase.instance.ref().child("Drivers");
+          final snapshot = await userRef.child(currentuser!.uid).get();
 
-      setState(() {
-        _isLoading = false; // Hide the loader when login is complete
-      });
+          if (snapshot.exists) {
+            var prefs = await SharedPreferences.getInstance();
+            prefs.setBool("islogin", true);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Login successful!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+            Fluttertoast.showToast(
+              msg: "Login Successful",
+              backgroundColor: Colors.green,
+              textColor: Colors.white,
+              fontSize: 16.0,
+            );
 
-      var  prefs = await SharedPreferences.getInstance();
-      prefs.setBool('islogin', true);
-      clearcontroller();
-      Navigator.pushReplacementNamed(
-        context,
-        '/homescreen', // or your homepage route
-      );
-      // or your homepage route
-    } on FirebaseAuthException catch (e) {
-      setState(() {
-        _isLoading = false; // Hide the loader if an error occurs
-      });
-
-      String message = '';
-      switch (e.code) {
-        case 'user-not-found':
-          message = 'No user found for that email.';
-          break;
-        case 'wrong-password':
-          message = 'Wrong password provided.';
-          break;
-        default:
-          message = 'Login failed. ${e.message}';
+            Navigator.pushReplacementNamed(context, '/homescreen');
+          } else {
+            firebaseauth.signOut();
+            Fluttertoast.showToast(
+              msg: "No Driver data found for this user",
+              backgroundColor: Colors.red,
+              textColor: Colors.white,
+              fontSize: 16.0,
+            );
+          }
+        }
+      } catch (e) {
+        Fluttertoast.showToast(
+          msg: e.toString(),
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+      } finally {
+        setState(() => _isLoading = false);
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
-      );
     }
   }
 
@@ -91,45 +84,44 @@ class _LoginScreenState extends State<LoginScreen> {
           key: _formKey,
           child: Column(
             children: [
-              SizedBox(height: height * 0.05),
+              SizedBox(height: height * 0.08),
               Center(
                 child: Image.asset(
-                  'assets/images/taxilogo.png',
-                  height: height * 0.3,
-                  width: width * 0.7,
+                  'assets/images/driver_logo.png',
+                  height: height * 0.2,
+                  width: width * 0.6,
                 ),
               ),
               SizedBox(height: height * 0.015),
               Text(
-                'Login to your account!',
+                'Login to your account',
                 style: TextStyle(
                   fontSize: height * 0.03,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
               ),
-              SizedBox(height: height * 0.02),
+              SizedBox(height: height * 0.03),
 
-              // Email Field
+              // Email
               TextFormField(
                 controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: 'Email',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.email),
                 ),
-                keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value!.isEmpty) return 'Please enter your email';
-                  if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+                  if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value))
                     return 'Enter a valid email';
-                  }
                   return null;
                 },
               ),
               SizedBox(height: height * 0.015),
 
-              // Password Field
+              // Password
               TextFormField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -144,9 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           : Icons.visibility,
                     ),
                     onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
+                      setState(() => _obscurePassword = !_obscurePassword);
                     },
                   ),
                 ),
@@ -154,7 +144,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     (value) =>
                         value!.isEmpty ? 'Please enter your password' : null,
               ),
-              SizedBox(height: height * 0.015),
 
               Align(
                 alignment: Alignment.centerRight,
@@ -164,40 +153,56 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   child: Text(
                     'Forgot Password?',
-                    style: TextStyle(fontSize: height * 0.018),
+                    style: TextStyle(
+                      color: const Color.fromARGB(255, 192, 57, 245),
+                      fontSize: height * 0.018,
+                    ),
                   ),
                 ),
               ),
-              SizedBox(height: height * 0.015),
 
               // Login Button
               SizedBox(
                 width: double.infinity,
                 height: height * 0.065,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.yellow,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _loginUser();
-                    }
-                  },
-                  child:
-                      _isLoading
-                          ? CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          )
-                          : Text(
-                            'Login',
-                            style: TextStyle(fontSize: height * 0.022),
+                child:
+                    _isLoading
+                        ? Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.yellow,
                           ),
+                        )
+                        : ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.yellow,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: _login,
+                          child: Text(
+                            'Login',
+                            style: TextStyle(
+                              fontSize: height * 0.022,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+              ),
+              SizedBox(height: height * 0.02),
+
+              Text(
+                "Don't have an account?",
+                style: TextStyle(
+                  fontSize: height * 0.018,
+                  color: Colors.black54,
                 ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushReplacementNamed(context, '/registerscreen');
+                },
+                child: Text('Register'),
               ),
             ],
           ),

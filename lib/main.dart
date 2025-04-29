@@ -6,6 +6,7 @@ import 'package:garifordriver/infoHandler/app_info.dart';
 import 'package:garifordriver/screens/Home/homescreen.dart';
 import 'package:garifordriver/screens/Home/precisepickuplocation.dart';
 import 'package:garifordriver/screens/Home/searchplaces.dart';
+
 import 'package:garifordriver/screens/forgot_password.dart';
 import 'package:garifordriver/screens/login_screen.dart';
 import 'package:garifordriver/screens/main_page.dart';
@@ -14,7 +15,7 @@ import 'package:garifordriver/splashscreen/splash_screen.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
-   WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
   print("Firebase initializing...");
   await Firebase.initializeApp();
   print("Firebase initialized successfully.");
