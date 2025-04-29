@@ -41,7 +41,7 @@ class _HomeTabState extends State<HomeTab> {
     }
   }
 
-  locateDriverPosition() async {
+  locateDriverPosition()async {
     Position cPosition = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
