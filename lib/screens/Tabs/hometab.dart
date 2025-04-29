@@ -29,7 +29,7 @@ class _HomeTabState extends State<HomeTab> {
 
   var geoLocator = Geolocator();
 
-  LocationPermission? _locationPermission;
+  LocationPermission?  _locationPermission;
   String statusText = "Now offline";
   bool isDriverActive = false;
   Color buttonColor = Colors.redAccent;
