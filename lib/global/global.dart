@@ -13,6 +13,7 @@ Position? driverCurrentPosition;
 
 DriverData onLineDriverData = DriverData();
 
+
 String? driverVehicleType = " ";
 StreamSubscription<Position>? streamSubscriptionPosition;
 StreamSubscription<Position>? streamSubscriptionDriverLivePosition;

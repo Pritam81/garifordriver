@@ -38,47 +38,16 @@ class _HomeScreenState extends State<HomeScreen> {
       activeIcon: Icon(Icons.home),
       label: 'Home',
     ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.attach_money_outlined),
-      activeIcon: Icon(Icons.attach_money),
-      label: 'Earning',
-    ),
+
     BottomNavigationBarItem(
       icon: Icon(Icons.share_outlined),
       activeIcon: Icon(Icons.share),
       label: 'Share',
     ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.star_border),
-      activeIcon: Icon(Icons.star),
-      label: 'Rating',
-    ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body:
-          _selectedIndex == 3
-              ? _screens[2] // Rating
-              : _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        items: _navBarItems,
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          if (index == 2) {
-            Share.share('Check out this amazing app!');
-          } else {
-            _onItemTapped(index);
-          }
-        },
-        selectedItemColor: Colors.yellow[800],
-        unselectedItemColor: Colors.grey[600],
-        showUnselectedLabels: true,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        elevation: 10,
-      ),
-    );
+    return HomeTab();
   }
 }
