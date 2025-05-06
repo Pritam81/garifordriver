@@ -23,7 +23,7 @@ class HomeTab extends StatefulWidget {
   State<HomeTab> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<HomeTab> {
+class _HomeTabState    extends State<HomeTab> {
   GoogleMapController? newGoogleMapController;
   final Completer<GoogleMapController> _controller = Completer();
   static const CameraPosition _kGooglePlex = CameraPosition(
