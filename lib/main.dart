@@ -1,16 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-
 import 'package:device_preview/device_preview.dart';
 import 'package:garifordriver/infoHandler/app_info.dart';
 import 'package:garifordriver/screens/Home/homescreen.dart';
 import 'package:garifordriver/screens/Home/precisepickuplocation.dart';
 import 'package:garifordriver/screens/Home/searchplaces.dart';
-
 import 'package:garifordriver/screens/forgot_password.dart';
 import 'package:garifordriver/screens/login_screen.dart';
 import 'package:garifordriver/screens/main_page.dart';
-
 import 'package:garifordriver/screens/register_screen.dart';
 import 'package:garifordriver/splashscreen/splash_screen.dart';
 import 'package:provider/provider.dart';
