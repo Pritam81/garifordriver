@@ -10,6 +10,7 @@ import 'package:garifordriver/Assistants/assistants_methods.dart';
 import 'package:garifordriver/global/global.dart';
 import 'package:garifordriver/model/drivermodel.dart';
 import 'package:garifordriver/pushnotification/push_notification_system.dart';
+import 'package:garifordriver/screens/Tabs/customdrawer.dart';
 import 'package:garifordriver/screens/main_page.dart';
 import 'package:garifordriver/screens/newtripscreen.dart';
 import 'package:geolocator/geolocator.dart';
@@ -23,7 +24,23 @@ class HomeTab extends StatefulWidget {
   State<HomeTab> createState() => _HomeTabState();
 }
 
-class _HomeTabState    extends State<HomeTab> {
+class _HomeTabState extends State<HomeTab> {
+  String _formatAddress(String? address) {
+    if (address == null || address.isEmpty) return "";
+
+    final startsWithDigit = RegExp(r'^\d');
+
+    if (startsWithDigit.hasMatch(address)) {
+      int commaIndex = address.indexOf(',');
+
+      if (commaIndex != -1 && commaIndex + 1 < address.length) {
+        return address.substring(commaIndex + 1).trim();
+      }
+    }
+
+    return address;
+  }
+
   GoogleMapController? newGoogleMapController;
   final Completer<GoogleMapController> _controller = Completer();
   static const CameraPosition _kGooglePlex = CameraPosition(
@@ -112,34 +129,104 @@ class _HomeTabState    extends State<HomeTab> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("New Ride Request"),
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 5,
+          title: Row(
+            children: const [
+              Icon(Icons.local_taxi, color: Colors.deepPurple),
+              SizedBox(width: 10),
+              Text(
+                "New Ride Request",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepPurple,
+                ),
+              ),
+            ],
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Pickup: ${requestInfo["originAddress"]}"),
-              Text("Destination: ${requestInfo["destinationAddress"]}"),
-              Text("Name: ${requestInfo["userName"]}"),
-              Text("Phone: ${requestInfo["userPhone"]}"),
-              Text("Time: ${requestInfo["time"]}"),
+              _infoChip(
+                Icons.my_location,
+                _formatAddress(requestInfo["originAddress"]),
+                "Pickup",
+              ),
+              _infoChip(
+                Icons.location_on,
+                requestInfo["destinationAddress"],
+                "Drop-off",
+              ),
+              _infoChip(Icons.person, requestInfo["userName"], "Name"),
+              _infoChip(Icons.phone_android, requestInfo["userPhone"], "Phone"),
+              _infoChip(Icons.access_time, requestInfo["time"], "Time"),
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () {
-                acceptRideRequest(rideRequestId, requestInfo);
-                Navigator.of(context).pop();
-              },
-              child: const Text("Accept"),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("Decline"),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[600],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.check),
+                  label: const Text("Accept"),
+                  onPressed: () {
+                    acceptRideRequest(rideRequestId, requestInfo);
+                    Navigator.of(context).pop();
+                  },
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.clear),
+                  label: const Text("Decline"),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
             ),
           ],
         );
       },
+    );
+  }
+
+  // This is the helper method
+  Widget _infoChip(IconData icon, String? value, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: Colors.deepPurple),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              "$label: ${value ?? ''}",
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -205,94 +292,98 @@ class _HomeTabState    extends State<HomeTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        GoogleMap(
-          padding: const EdgeInsets.only(top: 40),
-          mapType: MapType.normal,
-          myLocationEnabled: true,
-          zoomGesturesEnabled: true,
-          zoomControlsEnabled: true,
-          markers: markers,
-          polylines: polylines,
-          initialCameraPosition: _kGooglePlex,
-          onMapCreated: (controller) {
-            _controller.complete(controller);
-            newGoogleMapController = controller;
-            locateDriverPosition();
-          },
-        ),
-        if (statusText != "Now Online")
-          Container(
-            height: MediaQuery.of(context).size.height,
-            width: double.infinity,
-            color: Colors.black54,
-          ),
-        Positioned(
-          top:
-              statusText != "Now Online"
-                  ? MediaQuery.of(context).size.height * 0.45
-                  : 40,
-          left: 0,
-          right: 0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  if (!isDriverActive) {
-                    goOnline();
-                  } else {
-                    goOffline();
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: buttonColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                child:
-                    statusText != "Now Online"
-                        ? Text(
-                          statusText,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                        : const Icon(Icons.phonelink_ring, size: 30),
-              ),
-            ],
-          ),
-        ),
-        Positioned(
-          bottom: 100,
-          right: 20,
-          child: FloatingActionButton(
-            backgroundColor: const Color.fromARGB(255, 44, 183, 248),
-            onPressed: refreshPage,
-            tooltip: "Refresh",
-            child: const Icon(Icons.refresh, color: Colors.black),
-          ),
-        ),
-        Positioned(
-          bottom: 200,
-          right: 20,
-          child: IconButton(
-            icon: const Icon(Icons.logout, size: 35, color: Colors.red),
-            tooltip: 'Logout',
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const MainPage()),
-                (Route<dynamic> route) => false,
-              );
+    return Scaffold(
+      drawer: CustomDrawer(),
+      body: Stack(
+        children: [
+          GoogleMap(
+            padding: const EdgeInsets.only(top: 40),
+            mapType: MapType.normal,
+            myLocationEnabled: true,
+            zoomGesturesEnabled: true,
+            zoomControlsEnabled: true,
+            markers: markers,
+            polylines: polylines,
+            initialCameraPosition: _kGooglePlex,
+            onMapCreated: (controller) {
+              _controller.complete(controller);
+              newGoogleMapController = controller;
+              locateDriverPosition();
             },
           ),
-        ),
-      ],
+          if (statusText != "Now Online")
+            Container(
+              height: MediaQuery.of(context).size.height,
+              width: double.infinity,
+              color: Colors.black54,
+            ),
+          Positioned(
+            top:
+                statusText != "Now Online"
+                    ? MediaQuery.of(context).size.height * 0.45
+                    : 40,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    if (!isDriverActive) {
+                      goOnline();
+                    } else {
+                      goOffline();
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: buttonColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child:
+                      statusText != "Now Online"
+                          ? Text(
+                            statusText,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                          : const Icon(Icons.phonelink_ring, size: 30),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 40,
+            left: 20,
+            child: Builder(
+              builder:
+                  (context) => FloatingActionButton(
+                    backgroundColor: const Color.fromARGB(255, 44, 183, 248),
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer(); // Now this works
+                    },
+                    tooltip: "Open Drawer",
+                    child: const Icon(Icons.menu, color: Colors.black),
+                  ),
+            ),
+          ),
+
+          Positioned(
+            bottom: 100,
+            right: 20,
+            child: FloatingActionButton(
+              backgroundColor: const Color.fromARGB(255, 44, 183, 248),
+              onPressed: refreshPage,
+              tooltip: "Refresh",
+              child: const Icon(Icons.refresh, color: Colors.black),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
